@@ -7,6 +7,15 @@
 
 import Foundation
 
+enum GameState: String, Codable {
+    case waiting
+    case showingPattern
+    case playerTurn
+    case evaluating
+    case completed
+    case failed
+}
+
 struct GameSession: Identifiable, Codable {
     let id: UUID
     let difficulty: DifficultyLevel
@@ -30,13 +39,4 @@ struct GameSession: Identifiable, Codable {
         self.startTime = Date()
         self.timeRemaining = 30.0
     }
-}
-
-enum GameState: String, Codable {
-    case waiting
-    case showingPattern
-    case playerTurn
-    case evaluating
-    case completed
-    case failed
 }

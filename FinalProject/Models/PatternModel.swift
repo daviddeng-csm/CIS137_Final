@@ -7,6 +7,12 @@
 
 import Foundation
 
+enum DifficultyLevel: String, Codable, CaseIterable {
+    case easy = "Easy"
+    case medium = "Medium"
+    case hard = "Hard"
+}
+
 struct PatternModel: Identifiable, Codable {
     let id: UUID
     let sequence: [Int] // Card indices in order
@@ -21,10 +27,4 @@ struct PatternModel: Identifiable, Codable {
         self.timeLimit = timeLimit
         self.difficulty = difficulty
     }
-}
-
-enum DifficultyLevel: String, Codable, CaseIterable {
-    case easy = "Easy"
-    case medium = "Medium"
-    case hard = "Hard"
 }

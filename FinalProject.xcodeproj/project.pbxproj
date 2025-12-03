@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		951E26D72EE0D6BA00EF3826 /* FinalProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FinalProject.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		951E26D72EE0D6BA00EF3826 /* FinalProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = FinalProject.app; path = "/Users/ddeng/Documents/CSM/CIS137/Exams/FinalProject/build/Debug-iphoneos/FinalProject.app"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -33,16 +33,7 @@
 			isa = PBXGroup;
 			children = (
 				951E26D92EE0D6BA00EF3826 /* FinalProject */,
-				951E26D82EE0D6BA00EF3826 /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		951E26D82EE0D6BA00EF3826 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				951E26D72EE0D6BA00EF3826 /* FinalProject.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -95,7 +86,7 @@
 			mainGroup = 951E26CE2EE0D6BA00EF3826;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 951E26D82EE0D6BA00EF3826 /* Products */;
+			productRefGroup = 951E26CE2EE0D6BA00EF3826;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
