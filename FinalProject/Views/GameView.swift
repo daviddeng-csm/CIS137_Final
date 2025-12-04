@@ -81,9 +81,8 @@ struct GameView: View {
         .navigationBarBackButtonHidden(true)
         .navigationBarItems(leading: BackButton())
         .onAppear {
-            if viewModel.currentSession == nil {
-                presentationMode.wrappedValue.dismiss()
-            }
+            print("DEBUG: GameView appeared. Current session: \(viewModel.currentSession != nil ? "Exists" : "Nil")")
+            print("DEBUG: Game state: \(viewModel.gameState)")
         }
     }
 }
@@ -114,10 +113,18 @@ struct GameHeader: View {
                     .font(.title2.bold())
                 
                 HStack(spacing: 20) {
+                    let lives = viewModel.currentSession?.lives ?? 0
                     HStack(spacing: 5) {
-                        ForEach(0..<(viewModel.currentSession?.lives ?? 0), id: \.self) { _ in
-                            Image(systemName: "heart.fill")
-                                .foregroundColor(.red)
+                        if lives > 0 {
+                            ForEach(0..<lives, id: \.self) { _ in
+                                Image(systemName: "heart.fill")
+                                    .foregroundColor(.red)
+                            }
+                        } else {
+                            // Show broken heart when game over
+                            Image(systemName: "heart.slash")
+                                .foregroundColor(.gray)
+                                .font(.caption)
                         }
                     }
                 }

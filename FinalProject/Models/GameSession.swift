@@ -33,7 +33,7 @@ struct GameSession: Identifiable, Codable {
         self.difficulty = difficulty
         self.currentLevel = currentLevel
         self.score = score
-        self.lives = lives
+        self.lives = max(0, lives)  // Defensive programming to prevent lives from being negative.
         self.playerInput = []
         self.gameState = .waiting
         self.startTime = Date()

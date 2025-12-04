@@ -21,9 +21,16 @@ final class PatternGameViewModel: ObservableObject {
     private var timer: Timer?
     
     init() {
+        print("DEBUG: PatternGameViewModel initialized")
         loadHighScores()
         loadSavedSessions()
         initializeCards()
+        
+        // Debug: Print loaded sessions
+        print("DEBUG: Loaded \(savedSessions.count) saved sessions")
+        for session in savedSessions {
+            print("  - Level \(session.currentLevel), Score: \(session.score), Lives: \(session.lives)")
+        }
     }
     
     deinit {
@@ -51,8 +58,19 @@ final class PatternGameViewModel: ObservableObject {
     }
     
     func resumeGame(session: GameSession) {
+        print("DEBUG: Resuming game session - Level \(session.currentLevel), Score: \(session.score)")
+        
+        // Reset all cards first
+        resetCards()
+        
+        // Set the current session
         currentSession = session
+        
+        // Start a new pattern for this resumed session
         gameState = .waiting
+        generateNewPattern(for: session)
+        
+        print("DEBUG: Game state set to: \(gameState)")
     }
     
     func generateNewPattern(for session: GameSession) {
@@ -170,7 +188,8 @@ final class PatternGameViewModel: ObservableObject {
     private func handleWrongInput() {
         guard var session = currentSession else { return }
         
-        session.lives -= 1
+        // Prevent negative lives
+        session.lives = max(0, session.lives - 1)
         session.playerInput = []
         currentSession = session
         
@@ -178,7 +197,6 @@ final class PatternGameViewModel: ObservableObject {
             gameState = .failed
             saveHighScore()
         } else {
-            // Show wrong feedback briefly
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 self.resetCards()
                 self.gameState = .playerTurn
@@ -186,8 +204,10 @@ final class PatternGameViewModel: ObservableObject {
             }
         }
     }
-    
+
     private func handleTimeOut() {
+        // Set to 0, not negative
+        currentSession?.lives = 0
         gameState = .failed
         saveHighScore()
     }
