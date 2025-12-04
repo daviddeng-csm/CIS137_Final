@@ -24,19 +24,12 @@ struct GameView: View {
             // Game Status
             GameStatusView(viewModel: viewModel)
             
-            // Card Grid
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: 10) {
-                    ForEach(Array(viewModel.cards.enumerated()), id: \.element.id) { index, card in
-                        ChristmasCardView(card: card, size: 100) {
-                            if viewModel.gameState == .playerTurn {
-                                viewModel.handleCardTap(at: index)
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal)
-            }
+            // Card Grid - Now using the CardGridView from a separate file
+            CardGridView(
+                viewModel: viewModel,
+                columns: columns,
+                cardSize: 100
+            )
             
             // Controls
             if viewModel.gameState == .failed {
@@ -55,9 +48,9 @@ struct GameView: View {
                         .buttonStyle(GameButtonStyle(color: .blue))
                         
                         Button("Play Again") {
-                            if let difficulty = viewModel.currentSession?.difficulty {
-                                viewModel.startNewGame(difficulty: difficulty)
-                            }
+                            print("DEBUG: Play Again button pressed")
+                            // Use the last difficulty stored in viewModel
+                            viewModel.startNewGame(difficulty: viewModel.getLastDifficulty())
                         }
                         .buttonStyle(GameButtonStyle(color: .green))
                     }
@@ -87,6 +80,7 @@ struct GameView: View {
     }
 }
 
+// MARK: - Game Header Component
 struct GameHeader: View {
     @ObservedObject var viewModel: PatternGameViewModel
     
@@ -134,6 +128,7 @@ struct GameHeader: View {
     }
 }
 
+// MARK: - Timer Component
 struct TimerBar: View {
     @ObservedObject var viewModel: PatternGameViewModel
     
@@ -165,6 +160,7 @@ struct TimerBar: View {
     }
 }
 
+// MARK: - Game Status Component
 struct GameStatusView: View {
     @ObservedObject var viewModel: PatternGameViewModel
     
@@ -201,6 +197,7 @@ struct GameStatusView: View {
     }
 }
 
+// MARK: - Back Button Component
 struct BackButton: View {
     @Environment(\.presentationMode) var presentationMode
     

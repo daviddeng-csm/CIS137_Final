@@ -101,29 +101,34 @@ struct StartView: View {
                         
                         // Saved Games Section
                         if !viewModel.savedSessions.isEmpty {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Continue Game")
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                                    .padding(.horizontal, 30)
-                                
-                                ForEach(viewModel.savedSessions) { session in
-                                    SavedGameCard(session: session) {
-                                        // FIX: Add a small delay to ensure ViewModel updates before navigation
-                                        DispatchQueue.main.async {
-                                            viewModel.resumeGame(session: session)
-                                            // FIX: Use a small delay to ensure state is set
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                navigateToGame = true
+                            let activeSessions = viewModel.savedSessions.filter { !$0.isGameOver }
+                            
+                            if !activeSessions.isEmpty {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Continue Game")
+                                        .font(.headline)
+                                        .foregroundColor(.primary)
+                                        .padding(.horizontal, 30)
+                                    
+                                    ForEach(viewModel.savedSessions) { session in
+                                        SavedGameCard(session: session) {
+                                            // FIX: Add a small delay to ensure ViewModel updates before navigation
+                                            DispatchQueue.main.async {
+                                                viewModel.resumeGame(session: session)
+                                                // FIX: Use a small delay to ensure state is set
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                                    navigateToGame = true
+                                                }
                                             }
+                                        } onDelete: {
+                                            viewModel.deleteSession(session)
                                         }
-                                    } onDelete: {
-                                        viewModel.deleteSession(session)
+                                        .padding(.horizontal, 30)
                                     }
-                                    .padding(.horizontal, 30)
                                 }
+                                .padding(.top, 10)
                             }
-                            .padding(.top, 10)
+                            
                         }
                         
                         Spacer(minLength: 20)

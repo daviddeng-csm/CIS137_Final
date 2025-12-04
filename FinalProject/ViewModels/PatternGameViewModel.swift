@@ -19,6 +19,8 @@ final class PatternGameViewModel: ObservableObject {
     private let storage = StorageManager()
     private let totalCards = 9 // 3x3 grid
     private var timer: Timer?
+    private var currentStep: Int = 0
+    private var lastDifficulty: DifficultyLevel = .medium
     
     init() {
         print("DEBUG: PatternGameViewModel initialized")
@@ -51,26 +53,39 @@ final class PatternGameViewModel: ObservableObject {
     }
     
     func startNewGame(difficulty: DifficultyLevel) {
+        print("DEBUG: Starting new game with difficulty: \(difficulty)")
+        
+        // Store this difficulty for future use
+        lastDifficulty = difficulty
+        
+        // Invalidate timer
+        timer?.invalidate()
+        timer = nil
+        
+        // Create new session
         let newSession = GameSession(difficulty: difficulty)
         currentSession = newSession
         gameState = .waiting
+        
+        // Reset cards
+        resetCards()
+        
+        print("DEBUG: New session created - Level: \(newSession.currentLevel), Lives: \(newSession.lives)")
+        
+        // Generate the first pattern
         generateNewPattern(for: newSession)
     }
     
     func resumeGame(session: GameSession) {
         print("DEBUG: Resuming game session - Level \(session.currentLevel), Score: \(session.score)")
         
-        // Reset all cards first
+        // Store this difficulty
+        lastDifficulty = session.difficulty
+        
         resetCards()
-        
-        // Set the current session
         currentSession = session
-        
-        // Start a new pattern for this resumed session
         gameState = .waiting
         generateNewPattern(for: session)
-        
-        print("DEBUG: Game state set to: \(gameState)")
     }
     
     func generateNewPattern(for session: GameSession) {
@@ -95,22 +110,30 @@ final class PatternGameViewModel: ObservableObject {
     
     private func showPattern(_ pattern: PatternModel) {
         Task {
-            // Reset all cards to face down
             resetCards()
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second delay
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            
+            // Reset step counter
+            currentStep = 0
             
             // Show each card in sequence
             for cardIndex in pattern.sequence {
+                currentStep += 1
+                
+                // Set sequence number for this specific display moment
+                cards[cardIndex].sequenceNumber = currentStep
                 cards[cardIndex].isFaceUp = true
+                
                 try? await Task.sleep(nanoseconds: UInt64(pattern.displaySpeed * 1_000_000_000))
+                
                 cards[cardIndex].isFaceUp = false
-                try? await Task.sleep(nanoseconds: 200_000_000) // Small pause between cards
+                cards[cardIndex].sequenceNumber = nil // Clear after display
+                
+                try? await Task.sleep(nanoseconds: 200_000_000)
             }
             
-            // Player's turn
+            currentStep = 0 // Reset for player turn
             gameState = .playerTurn
-            currentSession?.timeRemaining = pattern.timeLimit
-            currentSession?.playerInput = []
             startTimer()
         }
     }
@@ -195,8 +218,11 @@ final class PatternGameViewModel: ObservableObject {
         
         if session.lives <= 0 {
             gameState = .failed
+            // Remove session from saved sessions when game over
+            deleteSession(session)
             saveHighScore()
         } else {
+            saveCurrentSession() // Only save if game continues
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 self.resetCards()
                 self.gameState = .playerTurn
@@ -209,6 +235,10 @@ final class PatternGameViewModel: ObservableObject {
         // Set to 0, not negative
         currentSession?.lives = 0
         gameState = .failed
+        // Remove session from saved sessions when game over
+        if let session = currentSession {
+            deleteSession(session)
+        }
         saveHighScore()
     }
     
@@ -266,6 +296,18 @@ final class PatternGameViewModel: ObservableObject {
         return sequence
     }
     
+    func getSequenceNumber(for index: Int) -> Int? {
+        // During pattern display, return the sequence number if set
+        if gameState == .showingPattern {
+            return cards[index].sequenceNumber
+        }
+        return nil
+    }
+    
+    func getLastDifficulty() -> DifficultyLevel {
+        return lastDifficulty
+    }
+    
     private func resetCards() {
         for i in cards.indices {
             cards[i].isFaceUp = false
@@ -275,7 +317,7 @@ final class PatternGameViewModel: ObservableObject {
     // MARK: - Persistent Storage
     
     func saveCurrentSession() {
-        guard let session = currentSession else { return }
+        guard let session = currentSession, session.lives > 0 else { return }
         
         // Remove old saved session if exists
         savedSessions.removeAll { $0.id == session.id }
@@ -286,6 +328,11 @@ final class PatternGameViewModel: ObservableObject {
     func deleteSession(_ session: GameSession) {
         savedSessions.removeAll { $0.id == session.id }
         storage.saveSessions(savedSessions)
+        
+        // If deleting the current session, clear it
+        if currentSession?.id == session.id {
+            currentSession = nil
+        }
     }
     
     func saveHighScore() {

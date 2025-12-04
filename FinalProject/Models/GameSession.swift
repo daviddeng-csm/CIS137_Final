@@ -27,6 +27,9 @@ struct GameSession: Identifiable, Codable {
     var gameState: GameState
     var startTime: Date
     var timeRemaining: Double
+    var isGameOver: Bool {
+        return lives <= 0
+    }
     
     init(id: UUID = UUID(), difficulty: DifficultyLevel, currentLevel: Int = 1, score: Int = 0, lives: Int = 3) {
         self.id = id

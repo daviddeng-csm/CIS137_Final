@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		951E26D72EE0D6BA00EF3826 /* FinalProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = FinalProject.app; path = "/Users/ddeng/Documents/CSM/CIS137/Exams/FinalProject/build/Debug-iphoneos/FinalProject.app"; sourceTree = "<absolute>"; };
+		951E27172EE0FADD00EF3826 /* FinalProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FinalProject.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -33,6 +33,7 @@
 			isa = PBXGroup;
 			children = (
 				951E26D92EE0D6BA00EF3826 /* FinalProject */,
+				951E27172EE0FADD00EF3826 /* FinalProject.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -58,7 +59,7 @@
 			packageProductDependencies = (
 			);
 			productName = FinalProject;
-			productReference = 951E26D72EE0D6BA00EF3826 /* FinalProject.app */;
+			productReference = 951E27172EE0FADD00EF3826 /* FinalProject.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
