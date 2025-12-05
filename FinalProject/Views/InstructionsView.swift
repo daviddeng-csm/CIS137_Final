@@ -18,25 +18,25 @@ struct InstructionsView: View {
                 InstructionStep(
                     number: 1,
                     title: "Watch the Pattern",
-                    description: "Cards will light up in a specific sequence. Pay close attention!"
+                    description: "Christmas cards will light up in a specific sequence. Pay close attention to the order!"
                 )
                 
                 InstructionStep(
                     number: 2,
                     title: "Repeat the Sequence",
-                    description: "Tap the cards in the exact same order you saw them."
+                    description: "Tap the cards in the exact same order you saw them. Take your time!"
                 )
                 
                 InstructionStep(
                     number: 3,
                     title: "Advance Levels",
-                    description: "Each correct pattern takes you to the next level with longer sequences."
+                    description: "Each correct pattern takes you to the next level with longer, faster sequences."
                 )
                 
                 InstructionStep(
                     number: 4,
-                    title: "Manage Your Time",
-                    description: "Complete patterns before time runs out! You start with 3 lives."
+                    title: "Manage Your Lives",
+                    description: "You start with 3 lives. Lose 1 life for each incorrect sequence. Game over when lives reach 0."
                 )
                 
                 VStack(alignment: .leading, spacing: 10) {
@@ -46,24 +46,44 @@ struct InstructionsView: View {
                     Text("• Base points increase with difficulty")
                     Text("• Time bonus for quick completion")
                     Text("• Level bonus for higher levels")
-                    Text("• Lose a life for incorrect patterns")
+                    Text("• Only 1 life lost per wrong sequence")
+                    Text("• Time limit decreases at higher levels")
                 }
                 .padding()
                 .background(Color.blue.opacity(0.1))
                 .cornerRadius(10)
                 
                 VStack(alignment: .leading, spacing: 10) {
+                    Text("Difficulty Levels")
+                        .font(.title2.bold())
+                    
+                    Text("• Easy: Slow patterns, 30 seconds per turn")
+                    Text("• Medium: Moderate speed, 25 seconds per turn")
+                    Text("• Hard: Fast patterns, 20 seconds per turn")
+                    Text("• Patterns get faster with each level")
+                }
+                .padding()
+                .background(Color.purple.opacity(0.1))
+                .cornerRadius(10)
+                
+                VStack(alignment: .leading, spacing: 10) {
                     Text("Tips")
                         .font(.title2.bold())
                     
-                    Text("• Say the pattern out loud")
-                    Text("• Look for visual patterns")
-                    Text("• Start with Easy mode to learn")
+                    Text("• Say the pattern out loud as you watch")
+                    Text("• Look for visual patterns in the Christmas images")
+                    Text("• Start with Easy mode to learn the game")
                     Text("• Save your game to continue later")
+                    Text("• Use the 'Continue Game' option for saved progress")
                 }
                 .padding()
                 .background(Color.green.opacity(0.1))
                 .cornerRadius(10)
+                
+                Text("Note: Your game is automatically saved after each level. You can continue any unfinished game from the main menu.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 10)
             }
             .padding()
         }
@@ -72,7 +92,7 @@ struct InstructionsView: View {
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-                .opacity(0.1)
+                .opacity(0.35)
         )
     }
 }
@@ -97,10 +117,14 @@ struct InstructionStep: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(title)
                     .font(.title3.bold())
+                    .foregroundColor(.primary)
                 
                 Text(description)
                     .foregroundColor(.secondary)
             }
         }
+        .background(Color.white.opacity(0.7)) // Add white background for readability
+        .cornerRadius(10)
+        .padding(.horizontal, 5)
     }
 }

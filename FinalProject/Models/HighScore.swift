@@ -9,7 +9,7 @@ import Foundation
 
 struct HighScore: Identifiable, Codable, Comparable {
     let id: UUID
-    let playerName: String
+    var playerName: String
     let score: Int
     let difficulty: DifficultyLevel
     let date: Date

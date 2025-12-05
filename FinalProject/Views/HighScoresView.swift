@@ -12,7 +12,7 @@ struct HighScoresView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("🏆 High Scores")
+            Text("High Scores")
                 .font(.system(size: 36, weight: .bold, design: .rounded))
                 .foregroundStyle(
                     LinearGradient(
@@ -47,7 +47,7 @@ struct HighScoresView: View {
             }
             
             Button("Clear All Scores") {
-                viewModel.clearHighScores()  // FIXED: Use method instead of direct access
+                viewModel.clearHighScores()
             }
             .buttonStyle(GameButtonStyle(color: .red))
             .padding()
@@ -57,7 +57,7 @@ struct HighScoresView: View {
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-                .opacity(0.1)
+                .opacity(0.35)
         )
     }
 }
@@ -110,6 +110,7 @@ struct HighScoreRow: View {
             }
         }
         .padding(.vertical, 8)
+        .background(Color.white.opacity(0.7)) // Add white background for readability
     }
     
     private var rankColor: Color {

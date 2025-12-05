@@ -11,10 +11,19 @@ struct GameView: View {
     @ObservedObject var viewModel: PatternGameViewModel
     @Environment(\.presentationMode) var presentationMode
     
+    @State private var playerNameInput = ""
+    
     private let columns = Array(repeating: GridItem(.flexible()), count: 3)
     
     var body: some View {
         ZStack {
+            // Background FIRST (behind everything)
+            Image("christmas-background")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+                .opacity(0.3)
+            
             // Main content
             VStack(spacing: 15) {
                 // Header with game info
@@ -39,13 +48,6 @@ struct GameView: View {
                 Spacer()
             }
             .padding()
-            .background(
-                Image("christmas-background")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-                    .opacity(0.1)
-            )
             .navigationBarBackButtonHidden(true)
             .navigationBarItems(leading: BackButton())
             
@@ -56,6 +58,30 @@ struct GameView: View {
                     .overlay(
                         GameOverOverlay(viewModel: viewModel, presentationMode: presentationMode)
                     )
+            }
+        }
+        .alert("🎉 New High Score! 🎉", isPresented: $viewModel.showNameAlert) {
+            TextField("Enter your name", text: $playerNameInput)
+                .autocapitalization(.words)
+            
+            Button("Save") {
+                viewModel.confirmHighScore(with: playerNameInput)
+                playerNameInput = ""
+            }
+            .disabled(playerNameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            
+            Button("Skip", role: .cancel) {
+                viewModel.cancelHighScore()
+                playerNameInput = ""
+            }
+        } message: {
+            if let tempScore = viewModel.tempHighScore {
+                Text("Congratulations! You scored \(tempScore.score) points!\nEnter your name for the leaderboard:")
+            }
+        }
+        .onChange(of: viewModel.showNameAlert) { showing in
+            if showing {
+                playerNameInput = "Player" // Default value
             }
         }
     }
@@ -69,16 +95,16 @@ struct GameOverOverlay: View {
         VStack(spacing: 25) {
             Text("Game Over")
                 .font(.system(size: 40, weight: .bold, design: .rounded))
-                .foregroundColor(.red) // Christmas red
+                .foregroundColor(.red)
             
             VStack(spacing: 15) {
                 Text("Final Score")
                     .font(.title2)
-                    .foregroundColor(.primary) // Dark text for readability
+                    .foregroundColor(.primary)
                 
                 Text("\(viewModel.currentSession?.score ?? 0)")
                     .font(.system(size: 60, weight: .bold))
-                    .foregroundColor(.green) // Christmas green for score
+                    .foregroundColor(.green)
             }
             
             VStack(spacing: 15) {
@@ -95,7 +121,9 @@ struct GameOverOverlay: View {
                 Button("Play Again") {
                     print("DEBUG: Play Again button pressed")
                     // Clean up the old session first
-                    viewModel.cleanupGameOverSession()
+                    if let session = viewModel.currentSession {
+                        viewModel.deleteSession(session)
+                    }
                     // Use the last difficulty stored in viewModel
                     viewModel.startNewGame(difficulty: viewModel.getLastDifficulty())
                 }
@@ -104,7 +132,9 @@ struct GameOverOverlay: View {
                 
                 Button("Main Menu") {
                     // Clean up the old session before going back
-                    viewModel.cleanupGameOverSession()
+                    if let session = viewModel.currentSession {
+                        viewModel.deleteSession(session)
+                    }
                     presentationMode.wrappedValue.dismiss()
                 }
                 .buttonStyle(GameButtonStyle(color: .blue))
@@ -114,7 +144,7 @@ struct GameOverOverlay: View {
         .padding(40)
         .background(
             RoundedRectangle(cornerRadius: 25)
-                .fill(Color.white.opacity(0.95)) // White with slight opacity
+                .fill(Color.white.opacity(0.95))
                 .shadow(radius: 20)
         )
         .padding(30)
@@ -170,7 +200,6 @@ struct GameHeader: View {
 }
 
 // MARK: - Timer Component
-// GameView.swift - Update TimerBar component
 struct TimerBar: View {
     @ObservedObject var viewModel: PatternGameViewModel
     

@@ -16,157 +16,167 @@ struct StartView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Fixed Header
-                VStack(spacing: 10) {
-                    Text("Pattern Pulse")
-                        .font(.system(size: 48, weight: .bold, design: .rounded))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.red, .green],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .multilineTextAlignment(.center)
-                    
-                    Text("Sequence Memory Game")
-                        .font(.title2)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.top, 60)
-                .padding(.bottom, 30)
-                .frame(maxWidth: .infinity)
-                .background(
-                    Image("christmas-background")
-                        .resizable()
-                        .scaledToFill()
-                        .ignoresSafeArea()
-                        .opacity(0.1)
-                )
+            ZStack {  // Change VStack to ZStack for background
+                // Background for entire screen
+                Image("christmas-background")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .opacity(0.35)
                 
-                // Scrollable Content
-                ScrollView {
-                    VStack(spacing: 25) {
-                        // Icon Buttons Row (High Scores & Instructions)
-                        HStack(spacing: 40) {
-                            Button(action: {
-                                navigateToHighScores = true
-                            }) {
-                                VStack(spacing: 5) {
-                                    Image(systemName: "trophy")
-                                        .font(.title2)
-                                        .foregroundColor(.yellow)
-                                    
-                                    Text("Scores")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            
-                            Button(action: {
-                                navigateToInstructions = true
-                            }) {
-                                VStack(spacing: 5) {
-                                    Image(systemName: "questionmark.circle")
-                                        .font(.title2)
-                                        .foregroundColor(.blue)
-                                    
-                                    Text("Help")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                        }
-                        .padding(.top, 10)
-                        
-                        // Difficulty Selection
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Select Difficulty")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                                .padding(.horizontal, 30)
-                            
-                            ForEach(DifficultyLevel.allCases, id: \.self) { difficulty in
-                                DifficultyCard(
-                                    difficulty: difficulty,
-                                    isSelected: selectedDifficulty == difficulty,
-                                    action: {
-                                        selectedDifficulty = difficulty
-                                    }
-                                )
-                                .padding(.horizontal, 30)
-                            }
-                        }
-                        
-                        // Saved Games Section
-                        if !viewModel.savedSessions.isEmpty {
-                            let activeSessions = viewModel.savedSessions.filter { !$0.isGameOver }
-                            
-                            if !activeSessions.isEmpty {
-                                VStack(alignment: .leading, spacing: 12) {
-                                    Text("Continue Game")
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-                                        .padding(.horizontal, 30)
-                                    
-                                    ForEach(viewModel.savedSessions) { session in
-                                        SavedGameCard(session: session) {
-                                            // FIX: Add a small delay to ensure ViewModel updates before navigation
-                                            DispatchQueue.main.async {
-                                                viewModel.resumeGame(session: session)
-                                                // FIX: Use a small delay to ensure state is set
-                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                    navigateToGame = true
-                                                }
-                                            }
-                                        } onDelete: {
-                                            viewModel.deleteSession(session)
-                                        }
-                                        .padding(.horizontal, 30)
-                                    }
-                                }
-                                .padding(.top, 10)
-                            }
-                            
-                        }
-                        
-                        Spacer(minLength: 20)
-                        
-                        // New Game Button (Large)
-                        Button(action: {
-                            viewModel.startNewGame(difficulty: selectedDifficulty)
-                            // FIX: Add a small delay to ensure state is set
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                navigateToGame = true
-                            }
-                        }) {
-                            HStack(spacing: 15) {
-                                Image(systemName: "play.circle.fill")
-                                    .font(.title2)
-                                
-                                Text("New Game")
-                                    .font(.title2.bold())
-                            }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 20)
-                            .background(
+                VStack(spacing: 0) {
+                    // Fixed Header
+                    VStack(spacing: 10) {
+                        Text("Pattern Pulse")
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .foregroundStyle(
                                 LinearGradient(
-                                    colors: [.green, .green.opacity(0.8)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
+                                    colors: [.red, .green],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
                                 )
                             )
-                            .cornerRadius(20)
-                            .shadow(color: .green.opacity(0.3), radius: 10, x: 0, y: 5)
-                        }
-                        .padding(.horizontal, 30)
-                        .padding(.bottom, 30)
+                            .multilineTextAlignment(.center)
+                        
+                        Text("Sequence Memory Game")
+                            .font(.title2)
+                            .foregroundColor(.secondary)
                     }
-                    .padding(.vertical, 20)
+                    .padding(.top, 60)
+                    .padding(.bottom, 30)
+                    .frame(maxWidth: .infinity)
+                    
+                    // Scrollable Content
+                    ScrollView {
+                        VStack(spacing: 25) {
+                            // Icon Buttons Row (High Scores & Instructions)
+                            HStack(spacing: 40) {
+                                Button(action: {
+                                    navigateToHighScores = true
+                                }) {
+                                    VStack(spacing: 5) {
+                                        Image(systemName: "trophy")
+                                            .font(.title2)
+                                            .foregroundColor(.yellow)
+                                        
+                                        Text("Scores")
+                                            .font(.caption)
+                                            .foregroundColor(.primary) // Changed from .secondary
+                                    }
+                                }
+                                
+                                Button(action: {
+                                    navigateToInstructions = true
+                                }) {
+                                    VStack(spacing: 5) {
+                                        Image(systemName: "questionmark.circle")
+                                            .font(.title2)
+                                            .foregroundColor(.blue)
+                                        
+                                        Text("Help")
+                                            .font(.caption)
+                                            .foregroundColor(.primary) // Changed from .secondary
+                                    }
+                                }
+                            }
+                            .padding(.top, 10)
+                            
+                            // Difficulty Selection
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Select Difficulty")
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                                    .padding(.horizontal, 30)
+                                
+                                ForEach(DifficultyLevel.allCases, id: \.self) { difficulty in
+                                    DifficultyCard(
+                                        difficulty: difficulty,
+                                        isSelected: selectedDifficulty == difficulty,
+                                        action: {
+                                            selectedDifficulty = difficulty
+                                        }
+                                    )
+                                    .padding(.horizontal, 30)
+                                }
+                            }
+                            .background(
+                                Color.white.opacity(0.7) // Add semi-transparent background
+                                    .cornerRadius(20)
+                                    .padding(.horizontal, 20)
+                            )
+                            
+                            // Saved Games Section
+                            if !viewModel.savedSessions.isEmpty {
+                                let activeSessions = viewModel.savedSessions.filter { !$0.isGameOver }
+                                
+                                if !activeSessions.isEmpty {
+                                    VStack(alignment: .leading, spacing: 12) {
+                                        Text("Continue Game")
+                                            .font(.headline)
+                                            .foregroundColor(.primary)
+                                            .padding(.horizontal, 30)
+                                        
+                                        ForEach(viewModel.savedSessions) { session in
+                                            SavedGameCard(session: session) {
+                                                DispatchQueue.main.async {
+                                                    viewModel.resumeGame(session: session)
+                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                                        navigateToGame = true
+                                                    }
+                                                }
+                                            } onDelete: {
+                                                viewModel.deleteSession(session)
+                                            }
+                                            .padding(.horizontal, 30)
+                                        }
+                                    }
+                                    .padding(.top, 10)
+                                    .background(
+                                        Color.white.opacity(0.7) // Add semi-transparent background
+                                            .cornerRadius(20)
+                                            .padding(.horizontal, 20)
+                                    )
+                                }
+                            }
+                            
+                            Spacer(minLength: 20)
+                            
+                            // New Game Button (Large)
+                            Button(action: {
+                                viewModel.startNewGame(difficulty: selectedDifficulty)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    navigateToGame = true
+                                }
+                            }) {
+                                HStack(spacing: 15) {
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.title2)
+                                    
+                                    Text("New Game")
+                                        .font(.title2.bold())
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 20)
+                                .background(
+                                    LinearGradient(
+                                        colors: [.green, .green.opacity(0.8)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .cornerRadius(20)
+                                .shadow(color: .green.opacity(0.3), radius: 10, x: 0, y: 5)
+                            }
+                            .padding(.horizontal, 30)
+                            .padding(.bottom, 30)
+                        }
+                        .padding(.vertical, 20)
+                    }
+                    .background(Color.clear) // Changed from white.opacity(0.01)
                 }
-                .background(Color.white.opacity(0.01))
+                .edgesIgnoringSafeArea(.top)
+                .navigationBarHidden(true)
                 
                 // Hidden NavigationLinks
                 NavigationLink(
@@ -190,8 +200,6 @@ struct StartView: View {
                     label: { EmptyView() }
                 )
             }
-            .edgesIgnoringSafeArea(.top)
-            .navigationBarHidden(true)
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }

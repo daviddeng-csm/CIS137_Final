@@ -16,6 +16,9 @@ final class PatternGameViewModel: ObservableObject {
     @Published var savedSessions: [GameSession] = []
     @Published var cards: [CardModel] = []
     
+    @Published var showNameAlert = false
+    @Published var tempHighScore: HighScore?
+    
     private let storage = StorageManager()
     private let totalCards = 9 // 3x3 grid
     private var timer: Timer?
@@ -141,7 +144,6 @@ final class PatternGameViewModel: ObservableObject {
     private func startTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            // Use Task to run on the main actor
             Task { @MainActor in
                 guard let self = self, self.gameState == .playerTurn else { return }
                 
@@ -170,7 +172,6 @@ final class PatternGameViewModel: ObservableObject {
             if inputLength == pattern.sequence.count {
                 evaluatePattern()
             }
-            // Removed the else block - we don't check individual taps anymore
         }
     }
     
@@ -185,7 +186,7 @@ final class PatternGameViewModel: ObservableObject {
         if isCorrect {
             handleCorrectPattern()
         } else {
-            handleWrongSequence() // Renamed for clarity
+            handleWrongSequence()
         }
     }
     
@@ -212,19 +213,16 @@ final class PatternGameViewModel: ObservableObject {
         session.playerInput = []
         currentSession = session
         
-        // NEW: Show which cards were wrong before moving on
+        // Show which cards were wrong before moving on
         showWrongFeedback { [weak self] in
             guard let self = self else { return }
             
             if session.lives <= 0 {
                 self.gameState = .failed
-                // Save high score BEFORE deleting session
-                self.saveHighScore()
-                // Don't delete session until user leaves game over screen
-                // We'll keep it for display
+                // Don't delete session here - keep it for game over screen
+                self.triggerHighScoreSave()  // Trigger high score save
             } else {
-                self.saveCurrentSession() // Only save if game continues
-                // Move to next sequence after a brief pause
+                self.saveCurrentSession()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     self.resetCards()
                     self.gameState = .waiting
@@ -253,14 +251,78 @@ final class PatternGameViewModel: ObservableObject {
             completion()
         }
     }
-
+    
     private func handleTimeOut() {
-        // Set to 0, not negative
         currentSession?.lives = 0
         gameState = .failed
-        // Save high score BEFORE any cleanup
-        saveHighScore()
-        // Don't delete session - keep it for display
+        // Don't delete session here - keep it for game over screen
+        triggerHighScoreSave()  // Trigger high score save
+    }
+    
+    // New method to trigger high score save with name input
+    private func triggerHighScoreSave() {
+        guard let session = currentSession, session.score > 0 else {
+            print("DEBUG: No session or score is 0, skipping high score save")
+            return
+        }
+        
+        print("DEBUG: Triggering high score save for score: \(session.score)")
+        
+        // Create temporary high score
+        tempHighScore = HighScore(
+            playerName: "Player", // Default name
+            score: session.score,
+            difficulty: session.difficulty,
+            levelReached: session.currentLevel
+        )
+        
+        // Show alert for player to enter name
+        showNameAlert = true
+    }
+    
+    func confirmHighScore(with name: String) {
+        guard var score = tempHighScore else { return }
+        
+        // Update name
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        score.playerName = trimmedName.isEmpty ? "Player" : trimmedName
+        
+        // Save to high scores
+        highScores.append(score)
+        highScores.sort { $0.score > $1.score }
+        if highScores.count > 10 {
+            highScores = Array(highScores.prefix(10))
+        }
+        
+        storage.saveHighScores(highScores)
+        
+        // Clear temp
+        tempHighScore = nil
+        showNameAlert = false
+        
+        print("DEBUG: High score saved: \(score.playerName) - \(score.score)")
+        
+        // Debug: Print saved high scores
+        print("DEBUG: High scores after save:")
+        for (index, savedScore) in highScores.enumerated() {
+            print("  \(index + 1). \(savedScore.playerName): \(savedScore.score) - Level \(savedScore.levelReached)")
+        }
+    }
+    
+    func cancelHighScore() {
+        // If cancelled, save with default name "Player"
+        if let score = tempHighScore {
+            highScores.append(score)
+            highScores.sort { $0.score > $1.score }
+            if highScores.count > 10 {
+                highScores = Array(highScores.prefix(10))
+            }
+            storage.saveHighScores(highScores)
+        }
+        
+        tempHighScore = nil
+        showNameAlert = false
+        print("DEBUG: High score saved with default name")
     }
     
     private func calculateScore(for session: GameSession) -> Int {
@@ -356,41 +418,8 @@ final class PatternGameViewModel: ObservableObject {
         }
     }
     
-    func saveHighScore() {
-        guard let session = currentSession, session.score > 0 else {
-            print("DEBUG: No session or score is 0, skipping high score save")
-            return
-        }
-        
-        print("DEBUG: Saving high score: \(session.score), Level: \(session.currentLevel)")
-        
-        let highScore = HighScore(
-            playerName: "Player",
-            score: session.score,
-            difficulty: session.difficulty,
-            levelReached: session.currentLevel
-        )
-        
-        highScores.append(highScore)
-        highScores.sort { $0.score > $1.score }
-        if highScores.count > 10 {
-            highScores = Array(highScores.prefix(10))
-        }
-        
+    func saveHighScores() {
         storage.saveHighScores(highScores)
-        
-        // Debug: Print saved high scores
-        print("DEBUG: High scores after save:")
-        for (index, score) in highScores.enumerated() {
-            print("  \(index + 1). \(score.score) - Level \(score.levelReached)")
-        }
-    }
-    
-    func cleanupGameOverSession() {
-        // Clean up the current session after game over screen is dismissed
-        if let session = currentSession, session.lives <= 0 {
-            deleteSession(session)
-        }
     }
     
     func clearHighScores() {
