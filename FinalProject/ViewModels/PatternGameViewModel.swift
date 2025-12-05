@@ -298,7 +298,6 @@ final class PatternGameViewModel: ObservableObject {
         
         // Clear temp
         tempHighScore = nil
-        showNameAlert = false
         
         print("DEBUG: High score saved: \(score.playerName) - \(score.score)")
         
@@ -308,7 +307,7 @@ final class PatternGameViewModel: ObservableObject {
             print("  \(index + 1). \(savedScore.playerName): \(savedScore.score) - Level \(savedScore.levelReached)")
         }
     }
-    
+
     func cancelHighScore() {
         // If cancelled, save with default name "Player"
         if let score = tempHighScore {
@@ -321,7 +320,6 @@ final class PatternGameViewModel: ObservableObject {
         }
         
         tempHighScore = nil
-        showNameAlert = false
         print("DEBUG: High score saved with default name")
     }
     

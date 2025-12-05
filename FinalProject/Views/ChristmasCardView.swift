@@ -10,7 +10,6 @@ import SwiftUI
 struct ChristmasCardView: View {
     let card: CardModel
     let size: CGFloat
-    let sequenceNumber: Int?
     let onTap: () -> Void
     
     @State private var isPulsing = false
@@ -32,25 +31,14 @@ struct ChristmasCardView: View {
                 )
             
             if card.isFaceUp {
-                // Front of card
-                VStack {
-                    Image(card.imageName)
-                        .resizable()
-                        .scaledToFit()
-                        .padding(8)
-                    
-                    if let sequenceNumber = sequenceNumber {
-                        Text("\(sequenceNumber)")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(6)
-                            .background(Circle().fill(Color.blue))
-                            .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                    }
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .scaleEffect(tapScale)
-                .animation(.spring(response: 0.2, dampingFraction: 0.6), value: tapScale)
+                // Front of card - JUST the image, NO sequence number
+                Image(card.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(12)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .scaleEffect(tapScale)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.6), value: tapScale)
             } else {
                 // Back of card
                 RoundedRectangle(cornerRadius: 12)

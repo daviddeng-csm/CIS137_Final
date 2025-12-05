@@ -15,16 +15,15 @@ struct CardGridView: View {
     var body: some View {
         LazyVGrid(columns: columns, spacing: 15) {
             ForEach(Array(viewModel.cards.enumerated()), id: \.element.id) { index, card in
-                let sequenceNumber = viewModel.getSequenceNumber(for: index)
                 ChristmasCardView(
                     card: card,
                     size: cardSize,
-                    sequenceNumber: sequenceNumber
-                ) {
-                    if viewModel.gameState == .playerTurn {
-                        viewModel.handleCardTap(at: index)
+                    onTap: {
+                        if viewModel.gameState == .playerTurn {
+                            viewModel.handleCardTap(at: index)
+                        }
                     }
-                }
+                )
             }
         }
         .padding(.horizontal)

@@ -11,8 +11,6 @@ struct GameView: View {
     @ObservedObject var viewModel: PatternGameViewModel
     @Environment(\.presentationMode) var presentationMode
     
-    @State private var playerNameInput = ""
-    
     private let columns = Array(repeating: GridItem(.flexible()), count: 3)
     
     var body: some View {
@@ -60,30 +58,6 @@ struct GameView: View {
                     )
             }
         }
-        .alert("🎉 New High Score! 🎉", isPresented: $viewModel.showNameAlert) {
-            TextField("Enter your name", text: $playerNameInput)
-                .autocapitalization(.words)
-            
-            Button("Save") {
-                viewModel.confirmHighScore(with: playerNameInput)
-                playerNameInput = ""
-            }
-            .disabled(playerNameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            
-            Button("Skip", role: .cancel) {
-                viewModel.cancelHighScore()
-                playerNameInput = ""
-            }
-        } message: {
-            if let tempScore = viewModel.tempHighScore {
-                Text("Congratulations! You scored \(tempScore.score) points!\nEnter your name for the leaderboard:")
-            }
-        }
-        .onChange(of: viewModel.showNameAlert) { showing in
-            if showing {
-                playerNameInput = "Player" // Default value
-            }
-        }
     }
 }
 
@@ -91,54 +65,137 @@ struct GameOverOverlay: View {
     @ObservedObject var viewModel: PatternGameViewModel
     let presentationMode: Binding<PresentationMode>
     
+    @State private var playerNameInput = ""
+    @State private var showNameField = false
+    
+    var isHighScore: Bool {
+        return viewModel.tempHighScore != nil && !showNameField
+    }
+    
     var body: some View {
         VStack(spacing: 25) {
-            Text("Game Over")
-                .font(.system(size: 40, weight: .bold, design: .rounded))
-                .foregroundColor(.red)
-            
-            VStack(spacing: 15) {
-                Text("Final Score")
-                    .font(.title2)
-                    .foregroundColor(.primary)
+            if isHighScore {
+                // High Score Version
+                Text("New High Score!")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.yellow)
+                    .multilineTextAlignment(.center)
                 
-                Text("\(viewModel.currentSession?.score ?? 0)")
-                    .font(.system(size: 60, weight: .bold))
-                    .foregroundColor(.green)
-            }
-            
-            VStack(spacing: 15) {
-                Text("Level Reached")
-                    .font(.title2)
-                    .foregroundColor(.primary)
-                
-                Text("\(viewModel.currentSession?.currentLevel ?? 1)")
-                    .font(.system(size: 40, weight: .bold))
-                    .foregroundColor(.blue)
-            }
-            
-            VStack(spacing: 20) {
-                Button("Play Again") {
-                    print("DEBUG: Play Again button pressed")
-                    // Clean up the old session first
-                    if let session = viewModel.currentSession {
-                        viewModel.deleteSession(session)
-                    }
-                    // Use the last difficulty stored in viewModel
-                    viewModel.startNewGame(difficulty: viewModel.getLastDifficulty())
+                VStack(spacing: 15) {
+                    Text("You scored:")
+                        .font(.title2)
+                        .foregroundColor(.primary)
+                    
+                    Text("\(viewModel.currentSession?.score ?? 0)")
+                        .font(.system(size: 60, weight: .bold))
+                        .foregroundColor(.green)
                 }
-                .buttonStyle(GameButtonStyle(color: .green))
-                .frame(width: 200)
                 
-                Button("Main Menu") {
-                    // Clean up the old session before going back
-                    if let session = viewModel.currentSession {
-                        viewModel.deleteSession(session)
-                    }
-                    presentationMode.wrappedValue.dismiss()
+                VStack(spacing: 10) {
+                    Text("Enter your name for the leaderboard:")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                    
+                    TextField("Your name", text: $playerNameInput)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.horizontal, 40)
+                        .frame(height: 44)
+                        .multilineTextAlignment(.center)
+                        .autocapitalization(.words)
                 }
-                .buttonStyle(GameButtonStyle(color: .blue))
-                .frame(width: 200)
+                .onAppear {
+                    // Set default name
+                    playerNameInput = "Player"
+                }
+                
+                HStack(spacing: 20) {
+                    Button("Save") {
+                        viewModel.confirmHighScore(with: playerNameInput)
+                        showNameField = true
+                    }
+                    .buttonStyle(GameButtonStyle(color: .green))
+                    .disabled(playerNameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    
+                    Button("Skip") {
+                        viewModel.cancelHighScore()
+                        showNameField = true
+                    }
+                    .buttonStyle(GameButtonStyle(color: .gray))
+                }
+                .padding(.top, 10)
+                
+            } else {
+                // Regular Game Over Version (or after name entered)
+                Text("Game Over")
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .foregroundColor(.red)
+                
+                VStack(spacing: 15) {
+                    Text("Final Score")
+                        .font(.title2)
+                        .foregroundColor(.primary)
+                    
+                    Text("\(viewModel.currentSession?.score ?? 0)")
+                        .font(.system(size: 60, weight: .bold))
+                        .foregroundColor(.green)
+                }
+                
+                VStack(spacing: 15) {
+                    Text("Level Reached")
+                        .font(.title2)
+                        .foregroundColor(.primary)
+                    
+                    Text("\(viewModel.currentSession?.currentLevel ?? 1)")
+                        .font(.system(size: 40, weight: .bold))
+                        .foregroundColor(.blue)
+                }
+                
+                // If it was a high score and name was entered/skipped, show confirmation
+                if viewModel.tempHighScore != nil && showNameField {
+                    VStack(spacing: 10) {
+                        Text("High score saved!")
+                            .font(.headline)
+                            .foregroundColor(.green)
+                        
+                        Text("Check the leaderboard to see your ranking!")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                    .background(Color.green.opacity(0.1))
+                    .cornerRadius(10)
+                }
+                
+                VStack(spacing: 20) {
+                    Button("Play Again") {
+                        print("DEBUG: Play Again button pressed")
+                        // Clean up the old session first
+                        if let session = viewModel.currentSession {
+                            viewModel.deleteSession(session)
+                        }
+                        // Clear any temp high score
+                        viewModel.tempHighScore = nil
+                        // Use the last difficulty stored in viewModel
+                        viewModel.startNewGame(difficulty: viewModel.getLastDifficulty())
+                    }
+                    .buttonStyle(GameButtonStyle(color: .green))
+                    .frame(width: 200)
+                    
+                    Button("Main Menu") {
+                        // Clean up the old session before going back
+                        if let session = viewModel.currentSession {
+                            viewModel.deleteSession(session)
+                        }
+                        // Clear any temp high score
+                        viewModel.tempHighScore = nil
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .buttonStyle(GameButtonStyle(color: .blue))
+                    .frame(width: 200)
+                }
             }
         }
         .padding(40)
