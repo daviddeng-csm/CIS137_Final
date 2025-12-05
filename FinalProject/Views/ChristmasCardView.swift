@@ -73,7 +73,6 @@ struct ChristmasCardView: View {
         .scaleEffect(card.isFaceUp ? 1.05 : 1.0)
         .animation(.easeInOut(duration: 0.3), value: card.isFaceUp)
         .onTapGesture {
-            // Trigger pulse and scale animation
             triggerTapFeedback()
             onTap()
         }

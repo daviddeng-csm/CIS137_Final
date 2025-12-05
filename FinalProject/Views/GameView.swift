@@ -14,69 +14,110 @@ struct GameView: View {
     private let columns = Array(repeating: GridItem(.flexible()), count: 3)
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Header with game info
-            GameHeader(viewModel: viewModel)
-            
-            // Timer
-            TimerBar(viewModel: viewModel)
-            
-            // Game Status
-            GameStatusView(viewModel: viewModel)
-            
-            // Card Grid - Now using the CardGridView from a separate file
-            CardGridView(
-                viewModel: viewModel,
-                columns: columns,
-                cardSize: 100
+        ZStack {
+            // Main content
+            VStack(spacing: 15) {
+                // Header with game info
+                GameHeader(viewModel: viewModel)
+                
+                // Timer - Always visible but shows progress only during player turn
+                TimerBar(viewModel: viewModel)
+                
+                // Game Status
+                GameStatusView(viewModel: viewModel)
+                    .padding(.horizontal)
+                
+                Spacer()
+                
+                // Card Grid with fixed spacing
+                CardGridView(
+                    viewModel: viewModel,
+                    columns: columns,
+                    cardSize: 90  // Fixed size instead of dynamic
+                )
+                
+                Spacer()
+            }
+            .padding()
+            .background(
+                Image("christmas-background")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .opacity(0.1)
             )
+            .navigationBarBackButtonHidden(true)
+            .navigationBarItems(leading: BackButton())
             
-            // Controls
+            // Game Over Overlay (like Halloween version)
             if viewModel.gameState == .failed {
-                VStack(spacing: 20) {
-                    Text("Game Over!")
-                        .font(.largeTitle.bold())
-                        .foregroundColor(.red)
-                    
-                    Text("Final Score: \(viewModel.currentSession?.score ?? 0)")
-                        .font(.title2)
-                    
-                    HStack(spacing: 20) {
-                        Button("Main Menu") {
-                            presentationMode.wrappedValue.dismiss()
-                        }
-                        .buttonStyle(GameButtonStyle(color: .blue))
-                        
-                        Button("Play Again") {
-                            print("DEBUG: Play Again button pressed")
-                            // Use the last difficulty stored in viewModel
-                            viewModel.startNewGame(difficulty: viewModel.getLastDifficulty())
-                        }
-                        .buttonStyle(GameButtonStyle(color: .green))
-                    }
-                }
-                .padding()
-                .background(Color.white.opacity(0.9))
-                .cornerRadius(15)
-                .shadow(radius: 10)
+                Color.black.opacity(0.7)
+                    .ignoresSafeArea()
+                    .overlay(
+                        GameOverOverlay(viewModel: viewModel, presentationMode: presentationMode)
+                    )
+            }
+        }
+    }
+}
+
+struct GameOverOverlay: View {
+    @ObservedObject var viewModel: PatternGameViewModel
+    let presentationMode: Binding<PresentationMode>
+    
+    var body: some View {
+        VStack(spacing: 25) {
+            Text("Game Over")
+                .font(.system(size: 40, weight: .bold, design: .rounded))
+                .foregroundColor(.red) // Christmas red
+            
+            VStack(spacing: 15) {
+                Text("Final Score")
+                    .font(.title2)
+                    .foregroundColor(.primary) // Dark text for readability
+                
+                Text("\(viewModel.currentSession?.score ?? 0)")
+                    .font(.system(size: 60, weight: .bold))
+                    .foregroundColor(.green) // Christmas green for score
             }
             
-            Spacer()
+            VStack(spacing: 15) {
+                Text("Level Reached")
+                    .font(.title2)
+                    .foregroundColor(.primary)
+                
+                Text("\(viewModel.currentSession?.currentLevel ?? 1)")
+                    .font(.system(size: 40, weight: .bold))
+                    .foregroundColor(.blue)
+            }
+            
+            VStack(spacing: 20) {
+                Button("Play Again") {
+                    print("DEBUG: Play Again button pressed")
+                    // Clean up the old session first
+                    viewModel.cleanupGameOverSession()
+                    // Use the last difficulty stored in viewModel
+                    viewModel.startNewGame(difficulty: viewModel.getLastDifficulty())
+                }
+                .buttonStyle(GameButtonStyle(color: .green))
+                .frame(width: 200)
+                
+                Button("Main Menu") {
+                    // Clean up the old session before going back
+                    viewModel.cleanupGameOverSession()
+                    presentationMode.wrappedValue.dismiss()
+                }
+                .buttonStyle(GameButtonStyle(color: .blue))
+                .frame(width: 200)
+            }
         }
-        .padding()
+        .padding(40)
         .background(
-            Image("christmas-background")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-                .opacity(0.1)
+            RoundedRectangle(cornerRadius: 25)
+                .fill(Color.white.opacity(0.95)) // White with slight opacity
+                .shadow(radius: 20)
         )
-        .navigationBarBackButtonHidden(true)
-        .navigationBarItems(leading: BackButton())
-        .onAppear {
-            print("DEBUG: GameView appeared. Current session: \(viewModel.currentSession != nil ? "Exists" : "Nil")")
-            print("DEBUG: Game state: \(viewModel.gameState)")
-        }
+        .padding(30)
     }
 }
 
@@ -129,22 +170,29 @@ struct GameHeader: View {
 }
 
 // MARK: - Timer Component
+// GameView.swift - Update TimerBar component
 struct TimerBar: View {
     @ObservedObject var viewModel: PatternGameViewModel
     
     var body: some View {
         VStack(spacing: 5) {
-            if viewModel.gameState == .playerTurn {
-                ProgressView(value: viewModel.currentSession?.timeRemaining ?? 0, total: 30)
+            if viewModel.gameState == .playerTurn, let timeRemaining = viewModel.currentSession?.timeRemaining {
+                // Show progress bar during player's turn
+                ProgressView(value: timeRemaining, total: 30)
                     .progressViewStyle(LinearProgressViewStyle(tint: progressColor))
-                    .animation(.linear, value: viewModel.currentSession?.timeRemaining)
+                    .animation(.linear, value: timeRemaining)
                 
-                Text("Time: \(String(format: "%.1f", viewModel.currentSession?.timeRemaining ?? 0))s")
+                Text("Time: \(String(format: "%.1f", timeRemaining))s")
                     .font(.caption)
                     .foregroundColor(.secondary)
+            } else {
+                // Show empty space to maintain layout
+                Text("")
+                    .frame(height: 20)
             }
         }
         .padding(.horizontal)
+        .frame(height: 40)
     }
     
     private var progressColor: Color {

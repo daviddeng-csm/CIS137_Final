@@ -19,7 +19,7 @@ struct StartView: View {
             VStack(spacing: 0) {
                 // Fixed Header
                 VStack(spacing: 10) {
-                    Text("🎄 Pattern Pulse")
+                    Text("Pattern Pulse")
                         .font(.system(size: 48, weight: .bold, design: .rounded))
                         .foregroundStyle(
                             LinearGradient(

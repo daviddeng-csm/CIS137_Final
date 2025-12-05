@@ -141,14 +141,17 @@ final class PatternGameViewModel: ObservableObject {
     private func startTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            guard let self = self, self.gameState == .playerTurn else { return }
-            
-            if let timeRemaining = self.currentSession?.timeRemaining {
-                self.currentSession?.timeRemaining = timeRemaining - 0.1
+            // Use Task to run on the main actor
+            Task { @MainActor in
+                guard let self = self, self.gameState == .playerTurn else { return }
                 
-                if self.currentSession?.timeRemaining ?? 0 <= 0 {
-                    self.timer?.invalidate()
-                    self.handleTimeOut()
+                if let timeRemaining = self.currentSession?.timeRemaining {
+                    self.currentSession?.timeRemaining = timeRemaining - 0.1
+                    
+                    if self.currentSession?.timeRemaining ?? 0 <= 0 {
+                        self.timer?.invalidate()
+                        self.handleTimeOut()
+                    }
                 }
             }
         }
@@ -166,15 +169,8 @@ final class PatternGameViewModel: ObservableObject {
             
             if inputLength == pattern.sequence.count {
                 evaluatePattern()
-            } else {
-                // Check if current input matches so far
-                for i in 0..<inputLength {
-                    if currentSession?.playerInput[i] != pattern.sequence[i] {
-                        handleWrongInput()
-                        return
-                    }
-                }
             }
+            // Removed the else block - we don't check individual taps anymore
         }
     }
     
@@ -189,7 +185,7 @@ final class PatternGameViewModel: ObservableObject {
         if isCorrect {
             handleCorrectPattern()
         } else {
-            handleWrongInput()
+            handleWrongSequence() // Renamed for clarity
         }
     }
     
@@ -208,26 +204,53 @@ final class PatternGameViewModel: ObservableObject {
         }
     }
     
-    private func handleWrongInput() {
+    private func handleWrongSequence() {
         guard var session = currentSession else { return }
         
-        // Prevent negative lives
+        // Lose only 1 life per wrong sequence, regardless of how many wrong cards
         session.lives = max(0, session.lives - 1)
         session.playerInput = []
         currentSession = session
         
-        if session.lives <= 0 {
-            gameState = .failed
-            // Remove session from saved sessions when game over
-            deleteSession(session)
-            saveHighScore()
-        } else {
-            saveCurrentSession() // Only save if game continues
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.resetCards()
-                self.gameState = .playerTurn
-                self.currentSession?.playerInput = []
+        // NEW: Show which cards were wrong before moving on
+        showWrongFeedback { [weak self] in
+            guard let self = self else { return }
+            
+            if session.lives <= 0 {
+                self.gameState = .failed
+                // Save high score BEFORE deleting session
+                self.saveHighScore()
+                // Don't delete session until user leaves game over screen
+                // We'll keep it for display
+            } else {
+                self.saveCurrentSession() // Only save if game continues
+                // Move to next sequence after a brief pause
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    self.resetCards()
+                    self.gameState = .waiting
+                    self.currentSession?.playerInput = []
+                    if let updatedSession = self.currentSession {
+                        self.generateNewPattern(for: updatedSession)
+                    }
+                }
             }
+        }
+    }
+    
+    // Helper method to show visual feedback for wrong sequence
+    private func showWrongFeedback(completion: @escaping () -> Void) {
+        Task {
+            // Briefly show the correct pattern again
+            if let pattern = currentSession?.currentPattern {
+                for cardIndex in pattern.sequence {
+                    cards[cardIndex].isFaceUp = true
+                }
+            }
+            
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+            
+            resetCards()
+            completion()
         }
     }
 
@@ -235,11 +258,9 @@ final class PatternGameViewModel: ObservableObject {
         // Set to 0, not negative
         currentSession?.lives = 0
         gameState = .failed
-        // Remove session from saved sessions when game over
-        if let session = currentSession {
-            deleteSession(session)
-        }
+        // Save high score BEFORE any cleanup
         saveHighScore()
+        // Don't delete session - keep it for display
     }
     
     private func calculateScore(for session: GameSession) -> Int {
@@ -336,7 +357,12 @@ final class PatternGameViewModel: ObservableObject {
     }
     
     func saveHighScore() {
-        guard let session = currentSession else { return }
+        guard let session = currentSession, session.score > 0 else {
+            print("DEBUG: No session or score is 0, skipping high score save")
+            return
+        }
+        
+        print("DEBUG: Saving high score: \(session.score), Level: \(session.currentLevel)")
         
         let highScore = HighScore(
             playerName: "Player",
@@ -352,6 +378,19 @@ final class PatternGameViewModel: ObservableObject {
         }
         
         storage.saveHighScores(highScores)
+        
+        // Debug: Print saved high scores
+        print("DEBUG: High scores after save:")
+        for (index, score) in highScores.enumerated() {
+            print("  \(index + 1). \(score.score) - Level \(score.levelReached)")
+        }
+    }
+    
+    func cleanupGameOverSession() {
+        // Clean up the current session after game over screen is dismissed
+        if let session = currentSession, session.lives <= 0 {
+            deleteSession(session)
+        }
     }
     
     func clearHighScores() {
